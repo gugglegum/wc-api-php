@@ -39,7 +39,7 @@ $client = new Client($url, $consumerKey, $consumerSecret, [
 
 The options `method_override_query` activates `?_method=PUT/DELETE` workaround. And the option `method_override_header` activates workaround with `X-HTTP-Method-Override` header. Usually it's enough to activate only one of them, but you can activate they both if you want.
 
-If you want to better understand how it's working on Woo-Commerce side, you can review the code in the file `wp-content\plugins\woocommerce\includes\legacy\api\v1\class-wc-api-server.php`. At the moment this code looks like this:
+If you want to better understand how it's working on Woo-Commerce side, you can review the code in the file `class-wc-api-server.php`. At the moment this code looks like this:
 
 ```php
 // Compatibility for clients that can't use PUT/PATCH/DELETE
