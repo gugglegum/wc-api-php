@@ -6,11 +6,70 @@ A PHP wrapper for the WooCommerce REST API. Easily interact with the WooCommerce
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/woocommerce/wc-api-php/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/woocommerce/wc-api-php/?branch=master)
 [![PHP version](https://badge.fury.io/ph/automattic%2Fwoocommerce.svg)](https://packagist.org/packages/automattic/woocommerce)
 
+## !!! What this fork does? !!!
+
+Some web-servers restrict HTTP methods to only GET and POST. Woo-Commerce uses PUT and DELETE in its API. But there are 2 workarounds for such servers:
+1. Use the POST method and add the "_method=" query parameter to the URL using the real HTTP method.
+2. Use the POST method and add the "X-HTTP-Method-Override" HTTP header with real HTTP method to the request.
+
+Both variants are equivalent. And they can even be used together. This fork adds possibility to use these workarounds.
+
+More information on this can be found here:
+
+ * https://developer.wordpress.org/rest-api/using-the-rest-api/global-parameters/#_method-or-x-http-method-override-header
+ * https://gridpane.com/kb/put-requests-woocommerce-api/
+ * https://gridpane.com/kb/making-nginx-accept-put-delete-and-patch-verbs/
+ * https://github.com/woocommerce/woocommerce/issues/15218
+
+All you need to do to activate workaround is to add 1 or 2 options to constructor of the Client like in this example:
+
+```php
+use Automattic\WooCommerce\Client;
+
+$client = new Client($url, $consumerKey, $consumerSecret, [
+    'wp_api' => true,
+    'version' => 'wc/v3',
+    'follow_redirects' => true,
+    'query_string_auth' => true,
+    'timeout' => 60,
+    'method_override_query' => true,
+    'method_override_header' => false,
+]);
+```
+
+The options `method_override_query` activates `?_method=PUT/DELETE` workaround. And the option `method_override_header` activates workaround with `X-HTTP-Method-Override` header. Usually it's enough to activate only one of them, but you can activate they both if you want.
+
+If you want to better understand how it's working on Woo-Commerce side, you can review the code in the file `wp-content\plugins\woocommerce\includes\legacy\api\v1\class-wc-api-server.php`. At the moment this code looks like this:
+
+```php
+// Compatibility for clients that can't use PUT/PATCH/DELETE
+if ( isset( $_GET['_method'] ) ) {
+    $this->method = strtoupper( $_GET['_method'] );
+} elseif ( isset( $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ) ) {
+    $this->method = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'];
+}
+```
+
 ## Installation
 
+Since this is a simple fork of the original package (without changing the Composer package name and registering it on Packagist.org), the installation is little more complicated than simply adding of one line into the `"require"` section. You need to override the location of this package in order to install it from my fork. So, basically you need to combine your `composer.json` with following object:
+
 ```
-composer require automattic/woocommerce
+{
+  "repositories": [
+    {
+        "type": "vcs",
+        "url": "git@github.com:gugglegum/wc-api-php.git"
+    }
+  ],
+  "require": {
+    "automattic/woocommerce": "^3.0",
+  }
+}
+
 ```
+
+And then run `composer update`.
 
 ## Getting started
 
